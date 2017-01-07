@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.qingyun.download">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <permission android:name="com.qingyun.permission.downLoad" />
+
+    <application
+        android:name="com.qingyun.application.QYApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity
+            android:name="com.qingyun.application.DownLoadFileActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:screenOrientation="portrait"
+            android:theme="@android:style/Theme.Light">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name="com.qingyun.download.DownLoadService"
+            android:permission="com.qingyun.permission.downLoad"
+            android:process=":downLoadService">
+            <intent-filter>
+                <action android:name="com.qingyun.download.stop" />
+                <action android:name="com.qingyun.download.start" />
+                <action android:name="com.qingyun.download.stop.all" />
+            </intent-filter>
+        </service>
+
+        <receiver
+            android:name="com.qingyun.download.DownloadBroadcastReceiver"
+            android:permission="com.qingyun.permission.downLoad">
+            <intent-filter>
+                <action android:name="com.qingyun.download.action.start" />
+                <action android:name="com.qingyun.download.action.stop" />
+                <action android:name="com.qingyun.download.action.error" />
+                <action android:name="com.qingyun.download.action.scuess" />
+                <action android:name="com.qingyun.download.action.loading" />
+            </intent-filter>
+        </receiver>
+
+        <receiver android:name="com.qingyun.broadcast.NetChangeBroadCastReceiver">
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

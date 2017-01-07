@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">下载Demo</string>
+    <string name="downLoad_file">下载文件</string>
+    <string name="new_downLoad_task">新增下载</string>
+    <string name="delete_downLoad_file">清空文件</string>
+    <string name="delete_downLoad_db">清空数据库</string>
+</resources>

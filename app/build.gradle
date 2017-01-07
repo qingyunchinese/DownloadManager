@@ -1,0 +1,62 @@
+apply plugin: 'com.android.application'
+//greenDao
+apply plugin: 'org.greenrobot.greendao'
+//支持Lamba表达式
+apply plugin: 'me.tatarka.retrolambda'
+//支持成最新android-apt版本
+apply plugin: 'com.neenbedankt.android-apt'
+android {
+    compileSdkVersion 25
+    buildToolsVersion "24.0.3"
+    defaultConfig {
+        applicationId "com.qingyun.download"
+        minSdkVersion 14
+        targetSdkVersion 24
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    buildTypes {
+        release {
+            //自定义BuildConfig字段,用来区别正式包和测试包
+            buildConfigField "boolean", "DEBUGMODE", "false"
+            //是否进行混淆
+            minifyEnabled true
+            //Zipalign优化
+            zipAlignEnabled true
+            //移除无用的Resources文件
+            shrinkResources true
+            //前一部分代表系统默认的Android程序的混淆文件，该文件已经包含了基本的混淆生命，后一个是自定义的混淆配置文件
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+
+        }
+    }
+
+    greendao {
+        schemaVersion 1000//数据库schema版本，也可以理解为数据库版本号
+        daoPackage "com.qingyun.greenDao"//设置DaoMaster、DaoSession、Dao包名
+        targetGenDir "src/main/java"//设置DaoMaster、DaoSession、Dao目录
+    }
+}
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    testCompile 'junit:junit:4.12'
+    compile 'com.squareup.okhttp3:okhttp:3.4.2'
+    compile 'com.jakewharton:butterknife:8.4.0'
+    compile 'com.jakewharton:butterknife-compiler:8.4.0'
+    compile 'com.android.support:appcompat-v7:25.0.1'
+    compile 'com.android.support:design:25.0.1'
+    compile 'com.android.support:recyclerview-v7:25.0.1'
+    compile 'com.android.support:cardview-v7:25.0.1'
+    compile 'com.github.bumptech.glide:glide:3.7.0'
+    compile 'jp.wasabeef:glide-transformations:1.0.6'
+    compile 'org.greenrobot:greendao:3.2.0'
+}
