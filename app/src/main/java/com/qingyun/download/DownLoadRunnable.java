@@ -192,6 +192,7 @@ public class DownLoadRunnable implements Runnable {
                         byte[] buffer = new byte[BUFFER_SIZE];
                         int totalLen = 0;
                         while ((len = source.read(buffer)) != -1 && !cancelled) {
+                            previousTime = System.currentTimeMillis();
                             sink.write(buffer, 0, len);
                             downloadSize += len;
                             totalLen = totalLen + len;
@@ -336,7 +337,7 @@ public class DownLoadRunnable implements Runnable {
                         cancelThread();
                     }
                     try {
-                        Thread.sleep(TIMERSLEEPTIME);
+                        Thread.sleep(300);
                     } catch (InterruptedException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();

@@ -3,12 +3,11 @@ package com.qingyun.adapter;
 import android.content.Context;
 import android.view.View;
 
-import com.qingyun.download.R;
 import com.qingyun.download.DownLoadRequestDao;
 import com.qingyun.download.DownLoadState;
 import com.qingyun.download.DownLoadUtils;
+import com.qingyun.download.R;
 import com.qingyun.imageloader.ImageLoader;
-import com.qingyun.utils.CommonUtils;
 
 import java.util.List;
 
@@ -36,15 +35,18 @@ public class DownLoadRecycleAdapter extends RecycleCommonAdapter<DownLoadRequest
                 onItemClickListener.onItemClick(view, holder.getLayoutPosition());
             }
         });
-        if (data.getCreateTime() > 0) {
-            holder.getTextView(R.id.fileTime).setText(CommonUtils.dateDifferent(data.getCreateTime()));
-        }
+        holder.getTextView(R.id.fileSpeed).setText("");
         if (data.getDownLoadState() == DownLoadState.loading) {
             holder.getProgressBar(R.id.fileProgress).setVisibility(View.VISIBLE);
             holder.getProgressBar(R.id.fileProgress).setProgress(data.getProgress());
             holder.getTextView(R.id.fileSize).setText(DownLoadUtils.convertStorage(data.getFileSize()) + "/");
             holder.getTextView(R.id.fileCurrentSize).setText(DownLoadUtils.convertStorage(data.getFileCurrentSize()));
             holder.getTextView(R.id.fileState).setText("下载中...");
+            if (data.getSpeed() > 0) {
+                holder.getTextView(R.id.fileSpeed).setText(DownLoadUtils.convertStorage(data.getSpeed()) + "/S");
+            } else {
+                holder.getTextView(R.id.fileSpeed).setText("0B/S");
+            }
         } else if (data.getDownLoadState() == DownLoadState.init) {
             holder.getTextView(R.id.fileState).setText("等待状态");
             if (data.getFileSize() == 0) {

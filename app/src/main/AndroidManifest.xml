@@ -4,6 +4,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <permission android:name="com.qingyun.permission.downLoad" />
+    <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES"></uses-permission>
 
     <application
         android:name="com.qingyun.application.QYApplication"

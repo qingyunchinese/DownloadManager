@@ -48,10 +48,14 @@ public class DownLoadFileActivity extends BaseActivity implements View.OnClickLi
     Button deleteDownLoadFile;
     @BindView(R.id.deleteDownLoadDB)
     Button deleteDownLoadDB;
+    /**用于测试的下载任务*/
     private List<DownLoadRequestDao> cacheQueueList = new ArrayList<>();
+    /**缓存当前页面所需要显示的下载任务*/
     private List<DownLoadRequestDao> downLoadRequestDaoList = new ArrayList<>();
+    /**主要来区分是否是本页面的下载任务*/
     private Set<String> downLoadUrlSet = new HashSet<>();
     private long exitTime = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -123,7 +127,7 @@ public class DownLoadFileActivity extends BaseActivity implements View.OnClickLi
 
     @Override
     public void onDownLoadLoading(String url, String cachePath, long count, long current, long speed) {
-        LogUtils.v(TAG, "onDownLoadLoading");
+        LogUtils.v(TAG, "onDownLoadLoading:"+speed);
         if (!downLoadUrlSet.contains(url)) {
             return;
         }
@@ -181,7 +185,9 @@ public class DownLoadFileActivity extends BaseActivity implements View.OnClickLi
                 if (count < 3) {
                     DownLoadRequestDao dao = cacheQueueList.get(count);
                     downLoadRequestDaoList.add(dao);
+                    downLoadUrlSet.add(dao.getDownLoadUrl());
                     downLoadRecycleAdapter.setCommonDataList(downLoadRequestDaoList);
+                    downLoadRecycleAdapter.notifyItemInserted(count);
                     refushRecycleView();
                     onClick(dao);
                 }else{
@@ -195,6 +201,7 @@ public class DownLoadFileActivity extends BaseActivity implements View.OnClickLi
             case R.id.deleteDownLoadDB:
                 GreenDaoUtils.getSingleTon().deleteAll();
                 downLoadRequestDaoList.clear();
+                downLoadUrlSet.clear();
                 downLoadRecycleAdapter.notifyDataSetChanged();
                 break;
         }

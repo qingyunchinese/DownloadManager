@@ -77,15 +77,14 @@
             android:textSize="16sp" />
 
         <TextView
-            android:id="@+id/fileTime"
+            android:id="@+id/fileSpeed"
             android:layout_width="wrap_content"
             android:layout_height="30dp"
             android:layout_below="@+id/fileProgress"
             android:layout_marginLeft="10dp"
-            android:layout_toLeftOf="@+id/fileIcon"
+            android:layout_toRightOf="@+id/fileIcon"
             android:gravity="center_vertical"
             android:maxLines="1"
-            android:text=""
             android:textColor="#0000ff"
             android:textSize="16sp" />
 
