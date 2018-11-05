@@ -60,7 +60,7 @@ public class DownLoadRequestDaoDao extends AbstractDao<DownLoadRequestDao, Long>
                 "\"fileCurrentSize\" INTEGER NOT NULL ," + // 8: fileCurrentSize
                 "\"CREATE_TIME\" INTEGER NOT NULL );"); // 9: createTime
         // Add Indexes
-        db.execSQL("CREATE UNIQUE INDEX " + constraint + "url ON Download" +
+        db.execSQL("CREATE UNIQUE INDEX " + constraint + "url ON \"Download\"" +
                 " (\"DOWN_LOAD_URL\" ASC);");
     }
 

@@ -121,7 +121,6 @@ public class DownLoadRunnable implements Runnable {
         boolean needDownLoadThread = true;
         try {
             sendStartMessage(downLoadUrl);
-            file.delete();
             if (file.exists()) {
                 needDownLoadThread = false;
                 downloadSize = totalSize;

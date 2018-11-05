@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 
+import com.bumptech.glide.MemoryCategory;
+
 /**
  * Created by qingyun1 on 16/11/22.
  */
@@ -13,6 +15,7 @@ public class BaseActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ImageGlide.get(this).setMemoryCategory(MemoryCategory.HIGH);
     }
 
     @Override

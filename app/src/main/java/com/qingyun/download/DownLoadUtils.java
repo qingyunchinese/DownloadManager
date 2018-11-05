@@ -141,7 +141,7 @@ public class DownLoadUtils {
     public static String getDownLoadDefaultPath(String downLoadUrl) {
         // TODO Auto-generated method stub
         String fileName = DownLoadUtils.getUrlContrainFileName(downLoadUrl);
-        String filePath = SDCardManager.getInstance().getAppDir().getAbsolutePath() + "/" + fileName;
+        String filePath = SDCardManager.getInstance().getAppDir().getAbsolutePath() + File.separator + fileName;
         return filePath;
     }
 

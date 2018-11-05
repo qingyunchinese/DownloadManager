@@ -1,17 +1,14 @@
 apply plugin: 'com.android.application'
 //greenDao
 apply plugin: 'org.greenrobot.greendao'
-//支持Lamba表达式
-apply plugin: 'me.tatarka.retrolambda'
-//支持成最新android-apt版本
-apply plugin: 'com.neenbedankt.android-apt'
+
 android {
-    compileSdkVersion 25
-    buildToolsVersion "24.0.3"
+    compileSdkVersion 28
+
     defaultConfig {
         applicationId "com.qingyun.download"
         minSdkVersion 14
-        targetSdkVersion 24
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -41,22 +38,39 @@ android {
         daoPackage "com.qingyun.greenDao"//设置DaoMaster、DaoSession、Dao包名
         targetGenDir "src/main/java"//设置DaoMaster、DaoSession、Dao目录
     }
+
+    flavorDimensions "default"
+
+    productFlavors {
+
+        prod {
+            dimension "default"
+        }
+    }
+}
+
+ext {
+    SUPPORTLIBVERSION = '28+'
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    testCompile 'junit:junit:4.12'
-    compile 'com.squareup.okhttp3:okhttp:3.4.2'
-    compile 'com.jakewharton:butterknife:8.4.0'
-    compile 'com.jakewharton:butterknife-compiler:8.4.0'
-    compile 'com.android.support:appcompat-v7:25.0.1'
-    compile 'com.android.support:design:25.0.1'
-    compile 'com.android.support:recyclerview-v7:25.0.1'
-    compile 'com.android.support:cardview-v7:25.0.1'
-    compile 'com.github.bumptech.glide:glide:3.7.0'
-    compile 'jp.wasabeef:glide-transformations:1.0.6'
-    compile 'org.greenrobot:greendao:3.2.0'
+    testImplementation "junit:junit:4.12"
+    implementation("com.squareup.okhttp3:okhttp:3.11.0") {
+        exclude group: "com.squareup.okio", module: "okio"
+    }
+    implementation 'com.squareup.okio:okio:2.+'
+    implementation 'com.jakewharton:butterknife:9.0.0-rc1'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:9.0.0-rc1'
+    implementation "com.android.support:appcompat-v7:${SUPPORTLIBVERSION}"
+    implementation "com.android.support:design:${SUPPORTLIBVERSION}"
+    implementation "com.android.support:recyclerview-v7:${SUPPORTLIBVERSION}"
+    implementation "com.android.support:cardview-v7:${SUPPORTLIBVERSION}"
+    implementation 'com.github.bumptech.glide:glide:4.8.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.8.0'
+    implementation "jp.wasabeef:glide-transformations:3.2.0"
+    implementation "org.greenrobot:greendao:3.2.2"
 }

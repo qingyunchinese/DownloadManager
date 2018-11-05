@@ -1,19 +1,24 @@
 package com.qingyun.imageloader;
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.Environment;
 import android.text.TextUtils;
 import android.widget.ImageView;
 
-import com.qingyun.download.R;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.qingyun.application.ImageGlide;
+import com.qingyun.application.QYGlideAppModule;
+import com.qingyun.download.R;
 import com.qingyun.utils.LogUtils;
 
 import jp.wasabeef.glide.transformations.CropCircleTransformation;
 import jp.wasabeef.glide.transformations.RoundedCornersTransformation;
+import jp.wasabeef.glide.transformations.RoundedCornersTransformation.CornerType;
 
-public final class ImageLoader {
+public final class ImageLoader
+{
     /**
      * 圆角矩形
      */
@@ -28,10 +33,14 @@ public final class ImageLoader {
     public static final int ImageNormalType = 3;
     private static ImageLoader urlImageViewHelper = null;
 
-    public static ImageLoader getInstance() {
-        if (urlImageViewHelper == null) {
-            synchronized (ImageLoader.class) {
-                if (urlImageViewHelper == null) {
+    public static ImageLoader getInstance()
+    {
+        if (urlImageViewHelper == null)
+        {
+            synchronized (ImageLoader.class)
+            {
+                if (urlImageViewHelper == null)
+                {
                     urlImageViewHelper = new ImageLoader();
                 }
             }
@@ -40,75 +49,95 @@ public final class ImageLoader {
     }
 
     private void showNormalTypeImageView(Context context, final ImageView imageView,
-                                         final String url, final int defaultResource) {
-        Glide.with(context)
-                .load(url)
+                                         final String url, final int defaultResource)
+    {
+        int width=imageView.getMeasuredWidth();
+        int height=imageView.getMeasuredWidth();
+        ImageGlide.with(context).load(Uri.parse(url))
+                .override(width,height)
                 .fitCenter()
                 .placeholder(defaultResource)
-                .dontAnimate()
                 .skipMemoryCache(true)
-                .diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(imageView);
     }
 
     private void showRoundTypeImageView(Context context, final ImageView imageView,
-                                        final String url, final int defaultResource) {
-        Glide.with(context)
-                .load(url)
+                                        final String url, final int defaultResource)
+    {
+        int width=imageView.getMeasuredWidth();
+        int height=imageView.getMeasuredWidth();
+        ImageGlide.with(context).load(Uri.parse(url))
                 .fitCenter()
+                .override(width,height)
                 .placeholder(defaultResource)
                 .dontAnimate()
-                .bitmapTransform(new RoundedCornersTransformation(Glide.get(context).getBitmapPool(), 30, 0))
                 .skipMemoryCache(true)
-                .diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                .transform(new RoundedCornersTransformation(width/9, 30, CornerType.ALL))
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(imageView);
     }
 
     private void showCircleTypeImageView(Context context, final ImageView imageView,
-                                         final String url, final int defaultResource) {
-        Glide.with(context)
-                .load(url)
-                .fitCenter()
+                                         final String url, final int defaultResource)
+    {
+        int width=imageView.getMeasuredWidth();
+        int height=imageView.getMeasuredWidth();
+        ImageGlide.with(context).load(Uri.parse(url))
+                .circleCrop()
+                .override(width,height)
                 .placeholder(defaultResource)
                 .dontAnimate()
-                .bitmapTransform(new CropCircleTransformation(Glide.get(context).getBitmapPool()))
                 .skipMemoryCache(true)
-                .diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(imageView);
     }
 
     public void loadDrawable(Context context, final ImageView imageView,
-                             final String url) {
+                             final String url)
+    {
         loadDrawable(context, imageView, url, R.drawable.default_image, ImageNormalType);
     }
 
     public void loadDrawable(Context context, final ImageView imageView,
-                             final String url, int mImageLoadType) {
+                             final String url, int mImageLoadType)
+    {
         loadDrawable(context, imageView, url, R.drawable.default_image, mImageLoadType);
     }
 
     public void loadDrawable(Context context, final ImageView imageView,
-                             final String url, final int defaultResource, int mImageLoadType) {
-        if (TextUtils.isEmpty(url)) {
+                             final String url, final int defaultResource, int mImageLoadType)
+    {
+        if (TextUtils.isEmpty(url))
+        {
             imageView.setImageResource(defaultResource);
             return;
         }
         LogUtils.v("UrlDrawable", "setUrlDrawable:" + url);
         String loadUrl = convertImageUrl(url);
-        if (mImageLoadType == ImageNormalType) {
+        if (mImageLoadType == ImageNormalType)
+        {
             showNormalTypeImageView(context, imageView, loadUrl, defaultResource);
-        } else if (mImageLoadType == ImageRoundRectType) {
+        }
+        else if (mImageLoadType == ImageRoundRectType)
+        {
             showRoundTypeImageView(context, imageView, loadUrl, defaultResource);
-        } else if (mImageLoadType == ImageRoundType) {
+        }
+        else if (mImageLoadType == ImageRoundType)
+        {
             showCircleTypeImageView(context, imageView, loadUrl, defaultResource);
         }
     }
 
-    public String convertImageUrl(String url) {
-        if (url.startsWith("http://")) {
+    public String convertImageUrl(String url)
+    {
+        if (url.startsWith("http://"))
+        {
             return url;
-        } else if (url.startsWith(Environment.getExternalStorageDirectory()
-                .toString())) {
+        }
+        else if (url.startsWith(Environment.getExternalStorageDirectory()
+                .toString()))
+        {
             return "file://" + url;
         }
         return url;
