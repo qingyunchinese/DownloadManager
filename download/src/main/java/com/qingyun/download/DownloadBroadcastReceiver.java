@@ -6,7 +6,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 
-import com.qingyun.download.utils.LogUtils;
+import com.qingyun.download.utils.LogUtil;
 
 /**
  * 作者： qingyun on 17/1/5.
@@ -14,13 +14,14 @@ import com.qingyun.download.utils.LogUtils;
  * 版本：v1.0
  * 描述：
  */
-public class DownloadBroadcastReceiver extends BroadcastReceiver {
+public class DownloadBroadcastReceiver extends BroadcastReceiver
+{
     private static final String TAG = "DownloadBroadcastReceiver";
-    public static final String ACTION_START = "com.qingyun.download.action.start";
-    public static final String ACTION_STOP = "com.qingyun.download.action.stop";
-    public static final String ACTION_ERROR = "com.qingyun.download.action.error";
-    public static final String ACTION_SCUESS = "com.qingyun.download.action.scuess";
-    public static final String ACTION_LOADING = "com.qingyun.download.action.loading";
+    public static final String ACTION_START = "com.android.download.action.start";
+    public static final String ACTION_STOP = "com.android.download.action.stop";
+    public static final String ACTION_ERROR = "com.android.download.action.error";
+    public static final String ACTION_SCUESS = "com.android.download.action.scuess";
+    public static final String ACTION_LOADING = "com.android.download.action.loading";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -52,27 +53,27 @@ public class DownloadBroadcastReceiver extends BroadcastReceiver {
             cachePath = bundle.getString(DownLoadService.DOWNLOAD_CACHE_PATH);
         }
         if (action.equals(ACTION_START)) {
-            LogUtils.v(TAG,"ACTION_START:->"+downLoadUrl);
-            QYDownLoadManager.getInstance().startDownLoadRequestDao(downLoadUrl,cachePath);
+            LogUtil.v(TAG,"ACTION_START:->"+downLoadUrl);
+            DownLoadManager.getInstance().startDownLoad(downLoadUrl,cachePath);
         } else if (action.equals(ACTION_STOP)) {
-            LogUtils.v(TAG,"ACTION_STOP:->"+downLoadUrl);
-            QYDownLoadManager.getInstance().stopDownLoadRequestDao(downLoadUrl,cachePath);
+            LogUtil.v(TAG,"ACTION_STOP:->"+downLoadUrl);
+            DownLoadManager.getInstance().stopDownLoad(downLoadUrl,cachePath);
         } else if (action.equals(ACTION_ERROR)) {
-            LogUtils.v(TAG,"ACTION_ERROR:->"+downLoadUrl);
+            LogUtil.v(TAG,"ACTION_ERROR:->"+downLoadUrl);
             String errorMessage = bundle.getString(DownLoadService.DOWNLOAD_ERROR_MESSAGE);
-            QYDownLoadManager.getInstance().errorDownLoadRequestDao(downLoadUrl,cachePath, errorMessage);
+            DownLoadManager.getInstance().errorDownLoad(downLoadUrl,cachePath, errorMessage);
         } else if (action.equals(ACTION_SCUESS)) {
-            LogUtils.v(TAG,"ACTION_SCUESS:->"+downLoadUrl);
-            QYDownLoadManager.getInstance().finishDownLoadRequestDao(downLoadUrl,cachePath);
+            LogUtil.v(TAG,"ACTION_SCUESS:->"+downLoadUrl);
+            DownLoadManager.getInstance().finishDownLoad(downLoadUrl,cachePath);
         } else if (action.equals(ACTION_LOADING)) {
-            LogUtils.v(TAG,"ACTION_LOADING:->"+downLoadUrl);
+            LogUtil.v(TAG,"ACTION_LOADING:->"+downLoadUrl);
             long fileSize = bundle
                     .getLong(DownLoadService.DOWNLOAD_FILESIZE);
             long fileCurrentSize = bundle
                     .getLong(DownLoadService.DOWNLOAD_FILE_CURRENT_SIZE);
             long speed = bundle
                     .getLong(DownLoadService.DOWNLOAD_FILE_SPEED);
-            QYDownLoadManager.getInstance().loadingDownLoadFileLoading(downLoadUrl,cachePath, fileSize, fileCurrentSize, speed);
+            DownLoadManager.getInstance().loadingDownLoading(downLoadUrl,cachePath, fileSize, fileCurrentSize, speed);
         }
     }
 }

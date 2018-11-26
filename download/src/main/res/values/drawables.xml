@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="common_notification_large_icon" type="drawable">#00000000</item>
+</resources>

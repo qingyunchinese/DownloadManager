@@ -1,1 +1,38 @@
-<manifest package="com.qingyun.download"/>
+<manifest package="com.qingyun.download"
+          xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <permission android:name="com.qingyun.permission.downLoad" />
+    <uses-permission android:name="com.qingyun.permission.downLoad" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application>
+        <service
+            android:name="com.qingyun.download.DownLoadService"
+            android:permission="com.qingyun.permission.downLoad">
+            <intent-filter>
+                <action android:name="com.qingyun.download.stop" />
+                <action android:name="com.qingyun.download.start" />
+                <action android:name="com.qingyun.download.stop.all" />
+            </intent-filter>
+        </service>
+
+        <receiver
+            android:name="com.qingyun.download.DownloadBroadcastReceiver"
+            android:permission="com.qingyun.permission.downLoad">
+            <intent-filter>
+                <action android:name="com.qingyun.download.action.start" />
+                <action android:name="com.qingyun.download.action.stop" />
+                <action android:name="com.qingyun.download.action.error" />
+                <action android:name="com.qingyun.download.action.scuess" />
+                <action android:name="com.qingyun.download.action.loading" />
+            </intent-filter>
+        </receiver>
+
+        <receiver android:name="com.qingyun.download.broadcast.NetChangeBroadCastReceiver">
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

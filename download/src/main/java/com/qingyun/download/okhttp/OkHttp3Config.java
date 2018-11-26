@@ -1,18 +1,11 @@
 package com.qingyun.download.okhttp;
 
-import android.support.annotation.RequiresPermission;
-import android.text.TextUtils;
 import android.util.Log;
 
 import com.qingyun.download.BuildConfig;
-import com.qingyun.download.QYDownLoadManager;
-import com.qingyun.download.utils.NetWorkUtils;
 
-import java.io.File;
 import java.io.IOException;
 
-import okhttp3.Cache;
-import okhttp3.CacheControl;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -47,47 +40,6 @@ public class OkHttp3Config {
      * 最多缓存5M的文件
      */
     public final static int HTTP_CACHE_MAXSIZE = 5 * 1024 * 1024;
-
-
-    public static Cache getDefaultCache() {
-        File httpCacheDirectory = new File(QYDownLoadManager.getInstance().getCacheDir(), HTTP_CACHE_FILENAME);
-        return new Cache(httpCacheDirectory, HTTP_CACHE_MAXSIZE);
-    }
-
-    /**
-     * 缓存拦截器
-     */
-    @RequiresPermission("android.permission.ACCESS_NETWORK_STATE")
-    public static final Interceptor CACHE_CONTROL_INTERCEPTOR = new Interceptor() {
-        @Override
-        public Response intercept(Chain chain) throws IOException {
-            Request request = chain.request();
-            String cacheTime = request.header("Cache-Time");
-            if(TextUtils.isEmpty(cacheTime)){
-                return chain.proceed(request);
-            }
-            if (!NetWorkUtils.isConnected(QYDownLoadManager.getInstance().getContext())) {
-                request = request.newBuilder()
-                        .cacheControl(CacheControl.FORCE_CACHE)
-                        .build();
-            }
-            Response response = chain.proceed(request);
-            if (!NetWorkUtils.isConnected(QYDownLoadManager.getInstance().getContext())) {
-                // 无网络时 设置缓存超时时间0个小时
-                response.newBuilder()
-                        .removeHeader("Cache-Control")
-                        .header("Cache-Control", "public, max-age=0")
-                        .build();
-            }else {
-                // 有网络时，设置超时为cacheTime
-                response.newBuilder()
-                        .removeHeader("Cache-Control")
-                        .header("Cache-Control", "public, only-if-cached, max-stale=" + cacheTime)
-                        .build();
-            }
-            return response;
-        }
-    };
 
     /**
      * 日志拦截器

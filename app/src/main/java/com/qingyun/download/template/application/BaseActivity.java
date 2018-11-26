@@ -1,8 +1,8 @@
 package com.qingyun.download.template.application;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 
 import com.bumptech.glide.MemoryCategory;
 import com.qingyun.download.template.manager.PermissionManager;
@@ -11,7 +11,7 @@ import com.qingyun.download.template.manager.PermissionManager;
  * Created by qingyun1 on 16/11/22.
  */
 
-public class BaseActivity extends Activity
+public class BaseActivity extends AppCompatActivity
 {
 
     private PermissionManager mPermissionManager;

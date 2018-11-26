@@ -1,33 +1,39 @@
 package com.qingyun.download.template.application;
 
 import android.Manifest.permission;
+import android.nfc.Tag;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.v7.util.DiffUtil;
+import android.support.v7.util.DiffUtil.DiffResult;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.qingyun.download.DownLoadManager;
+import com.qingyun.download.dao.DownLoadJob;
 import com.qingyun.download.template.adapter.DownLoadRecycleAdapter;
+import com.qingyun.download.template.adapter.DownLoadRecycleAdapter.OnDownLoadItemViewClick;
 import com.qingyun.download.template.adapter.RecycleCommonAdapter;
-import com.qingyun.download.DownLoadRequestDao;
 import com.qingyun.download.DownLoadState;
-import com.qingyun.download.db.GreenDaoUtils;
-import com.qingyun.download.template.utils.CommonUtils;
-import com.qingyun.download.utils.DownLoadUtils;
 import com.qingyun.download.DownloadListener;
-import com.qingyun.download.QYDownLoadManager;
-import com.qingyun.download.utils.LogUtils;
-import com.qingyun.download.template.utils.SDCardManager;
+import com.qingyun.download.template.bean.DataCallBack;
+import com.qingyun.download.template.utils.CommonUtils;
+import com.qingyun.download.utils.LogUtil;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import com.qingyun.download.template.R;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
@@ -37,35 +43,42 @@ import butterknife.ButterKnife;
  * 版本：v1.0
  * 描述：下载测试类
  */
-public class DownLoadFileActivity extends BaseActivity implements View.OnClickListener, DownloadListener, RecycleCommonAdapter.OnItemClickListener {
+public class DownLoadFileActivity extends BaseActivity implements View.OnClickListener, DownloadListener, RecycleCommonAdapter.OnItemClickListener, OnDownLoadItemViewClick
+{
 
     private String[] requestPermissions = {permission.ACCESS_NETWORK_STATE, permission.WRITE_EXTERNAL_STORAGE, permission.KILL_BACKGROUND_PROCESSES
             , permission.READ_EXTERNAL_STORAGE};
     public static final int APP_DEFAULT_REQUEST_PERMISSIONS = 82;
-
     private static final String TAG = "DownLoadFileActivity";
     @BindView(com.qingyun.download.template.R.id.recycleView)
     RecyclerView recycleView;
-    DownLoadRecycleAdapter downLoadRecycleAdapter;
     LinearLayoutManager layoutManager;
-    @BindView(R.id.newDownLoad)
+    @BindView(R.id.startDownLoad)
     Button newDownLoad;
-    @BindView(R.id.deleteDownLoadFile)
-    Button deleteDownLoadFile;
-    @BindView(R.id.deleteDownLoadDB)
-    Button deleteDownLoadDB;
-    /**用于测试的下载任务*/
-    private List<DownLoadRequestDao> cacheQueueList = new ArrayList<>();
-    /**缓存当前页面所需要显示的下载任务*/
-    private List<DownLoadRequestDao> downLoadRequestDaoList = new ArrayList<>();
-    /**主要来区分是否是本页面的下载任务*/
+    @BindView(R.id.stopDownLoad)
+    Button stopDownLoad;
+    private DownLoadRecycleAdapter downLoadRecycleAdapter;
+    private List<DownLoadJob> oldDownLoadJobList = new ArrayList<>();
+    private List<DownLoadJob> newDownLoadJobList = new ArrayList<>();
     private Set<String> downLoadUrlSet = new HashSet<>();
     private long exitTime = 0;
+    private Handler mHandler;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_download_file);
+        ButterKnife.bind(this);
+
+        mHandler = new Handler();
+        getSupportActionBar().setTitle("下载");
+        getSupportActionBar().setDisplayShowHomeEnabled(false);
+        bindClick();
+        initRecyclerView();
+        initCacheData();
+        refreshRecycleView();
+
         if (!checkAppPermissions(requestPermissions))
         {
             requestAppPermissions(requestPermissions, APP_DEFAULT_REQUEST_PERMISSIONS);
@@ -79,205 +92,285 @@ public class DownLoadFileActivity extends BaseActivity implements View.OnClickLi
     @Override
     protected void onRequestPermissionSuccess()
     {
-        ButterKnife.bind(this);
-        configDownLoadList();
-        configRecyceleView();
-        QYDownLoadManager.getInstance().registerDownLaodListener(this);
-        bindClick();
-        initCacheData();
+        DownLoadManager.getInstance().registerDownLoadListener(this);
     }
 
-    private void bindClick() {
+    private void bindClick()
+    {
+        stopDownLoad.setOnClickListener(this);
         newDownLoad.setOnClickListener(this);
-        deleteDownLoadFile.setOnClickListener(this);
-        deleteDownLoadDB.setOnClickListener(this);
     }
 
     @Override
-    protected void onDestroy() {
+    protected void onDestroy()
+    {
         super.onDestroy();
-        QYDownLoadManager.getInstance().unregisterDownLaodListener(this);
+        mHandler.removeCallbacksAndMessages(null);
+        DownLoadManager.getInstance().unregisterDownLoadListener(this);
     }
 
-    private void configDownLoadList() {
-        downLoadRequestDaoList = QYDownLoadManager.getInstance().initHistoryData();
-        for (DownLoadRequestDao dao : downLoadRequestDaoList) {
-            downLoadUrlSet.add(dao.getDownLoadUrl());
-        }
-    }
-
-    private void configRecyceleView() {
+    private void initRecyclerView()
+    {
         layoutManager = new LinearLayoutManager(this);
         layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(this, LinearLayoutManager.VERTICAL);
         ((DefaultItemAnimator) recycleView.getItemAnimator()).setSupportsChangeAnimations(false);
         recycleView.addItemDecoration(dividerItemDecoration);
         recycleView.setLayoutManager(layoutManager);
-        downLoadRecycleAdapter = new DownLoadRecycleAdapter(this, downLoadRequestDaoList);
+        downLoadRecycleAdapter = new DownLoadRecycleAdapter(this, newDownLoadJobList);
         downLoadRecycleAdapter.setOnItemClickListener(this);
+        downLoadRecycleAdapter.setOnDownLoadItemViewClick(this);
         recycleView.setAdapter(downLoadRecycleAdapter);
     }
 
-    private void onClick(DownLoadRequestDao downLoadRequestDao) {
-        if (downLoadRequestDao == null) {
-            LogUtils.v("新的下载");
-            QYDownLoadManager.getInstance().downLoadFile(DownLoadFileActivity.this, downLoadRequestDao);
-        } else {
-            if (downLoadRequestDao.getDownLoadState() == DownLoadState.loading || downLoadRequestDao.getDownLoadState() == DownLoadState.start) {
-                LogUtils.v("暂停下载");
-                QYDownLoadManager.getInstance().stopDownLoadFile(DownLoadFileActivity.this, downLoadRequestDao.getDownLoadUrl());
-            } else if (downLoadRequestDao.getDownLoadState() == DownLoadState.error || downLoadRequestDao.getDownLoadState() == DownLoadState.stop || downLoadRequestDao.getDownLoadState() == DownLoadState.init) {
-                LogUtils.v("重新的下载");
-                QYDownLoadManager.getInstance().downLoadFile(DownLoadFileActivity.this, downLoadRequestDao);
-            } else if (downLoadRequestDao.getDownLoadState() == DownLoadState.scuess) {
-                Toast.makeText(this, "已下载完成", Toast.LENGTH_SHORT).show();
-            }
+    private void onClick(DownLoadJob downLoadJob)
+    {
+        if (downLoadJob.getDownLoadState() == DownLoadState.loading || downLoadJob.getDownLoadState() == DownLoadState.start)
+        {
+            LogUtil.v(TAG,"暂停下载");
+            DownLoadManager.getInstance().stopDownLoadFile(DownLoadFileActivity.this, downLoadJob.getDownLoadUrl());
+        }
+        else if (downLoadJob.getDownLoadState() == DownLoadState.error || downLoadJob.getDownLoadState() == DownLoadState.stop || downLoadJob.getDownLoadState() == DownLoadState.init)
+        {
+            LogUtil.v(TAG,"重新的下载");
+            DownLoadManager.getInstance().downLoadFile(DownLoadFileActivity.this, downLoadJob);
+        }
+        else if (downLoadJob.getDownLoadState() == DownLoadState.success)
+        {
+            Toast.makeText(this, "已下载完成", Toast.LENGTH_SHORT).show();
         }
     }
 
     @Override
-    public void onDownLoadFailure(String url, String cachePath, String strMsg) {
-        LogUtils.v(TAG, "onDownLoadFailure");
-        if (!downLoadUrlSet.contains(url)) {
+    public void onDownLoadFailure(String url, String cachePath, String strMsg)
+    {
+        LogUtil.v(TAG, "onDownLoadFailure");
+        if (!downLoadUrlSet.contains(url))
+        {
             return;
         }
-        refushRecycleView();
+        setDownloadJobError(url, strMsg);
+        refreshRecycleView();
     }
 
     @Override
-    public void onDownLoadLoading(String url, String cachePath, long count, long current, long speed) {
-        LogUtils.v(TAG, "onDownLoadLoading:"+speed);
-        if (!downLoadUrlSet.contains(url)) {
+    public void onDownLoadLoading(String url, String cachePath, long count, long current, long speed)
+    {
+        LogUtil.v(TAG, "onDownLoadLoading speed:" + speed + " count：" + count + " current" + current);
+        if (!downLoadUrlSet.contains(url))
+        {
             return;
         }
-        refushRecycleView();
+        setDownloadJobLoading(url, count, current, speed);
+        refreshRecycleView();
     }
 
     @Override
-    public void onDownLoadStart(String url, String cachePath) {
-        LogUtils.v(TAG, "onDownLoadStart");
-        if (!downLoadUrlSet.contains(url)) {
+    public void onDownLoadStart(String url, String cachePath)
+    {
+        LogUtil.v(TAG, "onDownLoadStart");
+        if (!downLoadUrlSet.contains(url))
+        {
             return;
         }
-        refushRecycleView();
+        setDownloadJob(url, DownLoadState.start);
+        refreshRecycleView();
     }
 
     @Override
-    public void onDownLoadSuccess(String url, String cachePath) {
-        LogUtils.v(TAG, "onDownLoadSuccess");
-        if (!downLoadUrlSet.contains(url)) {
+    public void onDownLoadSuccess(String url, String cachePath)
+    {
+        LogUtil.v(TAG, "onDownLoadSuccess");
+        if (!downLoadUrlSet.contains(url))
+        {
             return;
         }
-        refushRecycleView();
+        setDownloadJob(url, DownLoadState.success);
+        refreshRecycleView();
     }
 
     @Override
-    public void onDownLoadStop(String url, String cachePath) {
-        LogUtils.v(TAG, "onDownLoadStop");
-        if (!downLoadUrlSet.contains(url)) {
+    public void onDownLoadStop(String url, String cachePath)
+    {
+        LogUtil.v(TAG, "onDownLoadStop");
+        if (!downLoadUrlSet.contains(url))
+        {
             return;
         }
-        refushRecycleView();
+        setDownloadJob(url, DownLoadState.stop);
+        refreshRecycleView();
     }
 
     @Override
-    public void onItemClick(View itemView, int pos) {
-        onClick(downLoadRequestDaoList.get(pos));
+    public void onDownLoadFinish(String url, String cacheFilePath)
+    {
+        LogUtil.v(TAG, "onDownLoadFinish:");
+        if (!downLoadUrlSet.contains(url))
+        {
+            return;
+        }
+        setDownloadJob(url, DownLoadState.finish);
+        refreshRecycleView();
     }
 
+    @Override
+    public void onItemClick(View itemView, int pos)
+    {
+        onClick(newDownLoadJobList.get(pos));
+    }
 
     /**
      * 列表局部刷新
      */
-    public void refushRecycleView() {
-        LogUtils.v(TAG, "refushRecycleView");
-        int start = layoutManager.findFirstVisibleItemPosition();
-        int end = layoutManager.findLastVisibleItemPosition();
-        downLoadRecycleAdapter.notifyItemRangeChanged(start, end + 1);
+    public synchronized void refreshRecycleView()
+    {
+        try
+        {
+            mHandler.postDelayed(freshRunnable, 400);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    private Runnable freshRunnable = new Runnable()
+    {
+        @Override
+        public void run()
+        {
+            LogUtil.v(TAG, "refreshRecycleView");
+            List<DownLoadJob> newList = newDownLoadJobList;
+            List<DownLoadJob> oldList = oldDownLoadJobList;
+            DataCallBack dataCallBack = new DataCallBack(newList, oldList);
+            DiffResult diffResult = DiffUtil.calculateDiff(dataCallBack);
+            synchronizedDownLoadList();
+            downLoadRecycleAdapter.setCommonDataList(newDownLoadJobList);
+            diffResult.dispatchUpdatesTo(downLoadRecycleAdapter);
+        }
+    };
+
+    private synchronized void synchronizedDownLoadList()
+    {
+        for (int i = 0; i < 1; i++)
+        {
+            DownLoadJob oldDownloadDao = oldDownLoadJobList.get(i);
+            DownLoadJob newDownloadDao = newDownLoadJobList.get(i);
+            oldDownloadDao.setDownLoadState(newDownloadDao.getDownLoadState());
+            oldDownloadDao.setFileCurrentSize(newDownloadDao.getFileCurrentSize());
+            oldDownloadDao.setFileSize(newDownloadDao.getFileSize());
+            oldDownloadDao.setErrorMessage(newDownloadDao.getErrorMessage());
+        }
     }
 
     @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.newDownLoad:
-                int count = downLoadRecycleAdapter.getItemCount();
-                if (count < 3) {
-                    DownLoadRequestDao dao = cacheQueueList.get(count);
-                    downLoadRequestDaoList.add(dao);
-                    downLoadUrlSet.add(dao.getDownLoadUrl());
-                    downLoadRecycleAdapter.setCommonDataList(downLoadRequestDaoList);
-                    downLoadRecycleAdapter.notifyItemInserted(count);
-                    refushRecycleView();
-                    onClick(dao);
-                }else{
-                    Toast.makeText(this, "默认三个下载任务,更多请自己添加", Toast.LENGTH_SHORT).show();
+    public void onClick(View v)
+    {
+        switch (v.getId())
+        {
+            case R.id.startDownLoad:
+                for (DownLoadJob DownLoadJob : newDownLoadJobList)
+                {
+                    DownLoadManager.getInstance().downLoadFile(this, DownLoadJob);
                 }
                 break;
-            case R.id.deleteDownLoadFile:
-                QYDownLoadManager.getInstance().stopAllDownLoadFile(this);
-                DownLoadUtils.deleteDir(SDCardManager.getInstance().getAppDir());
+            case R.id.stopDownLoad:
+                DownLoadManager.getInstance().stopAllDownLoadFile(this);
                 break;
-            case R.id.deleteDownLoadDB:
-                GreenDaoUtils.getSingleTon().deleteAll();
-                downLoadRequestDaoList.clear();
-                downLoadUrlSet.clear();
-                downLoadRecycleAdapter.notifyDataSetChanged();
-                break;
+            default:
         }
     }
 
 
-    private void initCacheData() {
+    private void initCacheData()
+    {
         String downLoadUrl = "http://g.shouji.360tpcdn.com/161221/ddacfd095e82df4d2c5b3b029a4843aa/com.yunchang.djsy.hyjs.qihu_500.apk";
-        DownLoadRequestDao downLoadRequestDao1 = new DownLoadRequestDao();
-        downLoadRequestDao1.setDownLoadUrl(downLoadUrl);
-        downLoadRequestDao1.setCacheFilePath(CommonUtils.getDownLoadDefaultPath(downLoadUrl));
-        downLoadRequestDao1.setFileName("黑衣剑士-刀剑神域动漫");
-        downLoadRequestDao1.setFileIconUrl("http://p17.qhimg.com/t01453f12810e8c2903.png");
-        if (DownLoadUtils.isFileExist(downLoadRequestDao1.getCacheFilePath())) {
-            downLoadRequestDao1.setDownLoadState(DownLoadState.scuess);
-        } else {
-            downLoadRequestDao1.setDownLoadState(DownLoadState.init);
-        }
-        cacheQueueList.add(downLoadRequestDao1);
+        String downLoadName = "黑衣剑士-刀剑神域动漫";
+        String downLoadIcon = "http://p17.qhimg.com/t01453f12810e8c2903.png";
+        newDownLoadJobList.add(createDownLoadJob(downLoadUrl, downLoadName, downLoadIcon));
+        oldDownLoadJobList.add(createDownLoadJob(downLoadUrl, downLoadName, downLoadIcon));
+        downLoadUrlSet.add(downLoadUrl);
         downLoadUrl = "http://g.shouji.360tpcdn.com/161220/9158196215e4e8f55cd400fa654a2a8f/com.game.shns.a360_40.apk";
-        DownLoadRequestDao downLoadRequestDao2 = new DownLoadRequestDao();
-        downLoadRequestDao2.setDownLoadUrl(downLoadUrl);
-        downLoadRequestDao2.setCacheFilePath(CommonUtils.getDownLoadDefaultPath(downLoadUrl));
-        downLoadRequestDao2.setFileName("圣斗士星矢：重生-30周年");
-        downLoadRequestDao2.setFileIconUrl("http://p19.qhimg.com/t019e543b20bcaba038.png");
-        if (DownLoadUtils.isFileExist(downLoadRequestDao2.getCacheFilePath())) {
-            downLoadRequestDao2.setDownLoadState(DownLoadState.scuess);
-        } else {
-            downLoadRequestDao2.setDownLoadState(DownLoadState.init);
-        }
-        cacheQueueList.add(downLoadRequestDao2);
+        downLoadName = "圣斗士星矢：重生-30周年";
+        downLoadIcon = "http://p19.qhimg.com/t019e543b20bcaba038.png";
+        newDownLoadJobList.add(createDownLoadJob(downLoadUrl, downLoadName, downLoadIcon));
+        oldDownLoadJobList.add(createDownLoadJob(downLoadUrl, downLoadName, downLoadIcon));
+        downLoadUrlSet.add(downLoadUrl);
         downLoadUrl = "http://shouji.360tpcdn.com/170105/a8246ce9ebca8af55fb623e7311d16dd/com.miHoYo.bh3.qihoo_13.apk";
-        DownLoadRequestDao downLoadRequestDao3 = new DownLoadRequestDao();
-        downLoadRequestDao3.setDownLoadUrl(downLoadUrl);
-        downLoadRequestDao3.setCacheFilePath(CommonUtils.getDownLoadDefaultPath(downLoadUrl));
-        downLoadRequestDao3.setFileName("崩坏3-诅咒之剑");
-        downLoadRequestDao3.setFileIconUrl("http://p15.qhimg.com/t01327bceff77cb0e79.png");
-        if (DownLoadUtils.isFileExist(downLoadRequestDao3.getCacheFilePath())) {
-            downLoadRequestDao3.setDownLoadState(DownLoadState.scuess);
-        } else {
-            downLoadRequestDao3.setDownLoadState(DownLoadState.init);
+        downLoadName = "崩坏3-诅咒之剑";
+        downLoadIcon = "http://p15.qhimg.com/t01327bceff77cb0e79.png";
+        newDownLoadJobList.add(createDownLoadJob(downLoadUrl, downLoadName, downLoadIcon));
+        oldDownLoadJobList.add(createDownLoadJob(downLoadUrl, downLoadName, downLoadIcon));
+        downLoadUrlSet.add(downLoadUrl);
+    }
+
+    private void setDownloadJob(String downLoadUrl, int downloadState)
+    {
+        for (DownLoadJob downLoadJob : newDownLoadJobList)
+        {
+            if (TextUtils.equals(downLoadJob.getDownLoadUrl(), downLoadUrl))
+            {
+                downLoadJob.setDownLoadState(downloadState);
+            }
         }
-        cacheQueueList.add(downLoadRequestDao3);
+    }
+
+    private void setDownloadJobError(String downLoadUrl, String errorMsg)
+    {
+        for (DownLoadJob downLoadJob : newDownLoadJobList)
+        {
+            if (TextUtils.equals(downLoadJob.getDownLoadUrl(), downLoadUrl))
+            {
+                downLoadJob.setDownLoadState(DownLoadState.error);
+                downLoadJob.setErrorMessage(errorMsg);
+            }
+        }
+    }
+
+    private void setDownloadJobLoading(String downLoadUrl, long count, long current, long speed)
+    {
+        for (DownLoadJob downLoadJob : newDownLoadJobList)
+        {
+            if (TextUtils.equals(downLoadJob.getDownLoadUrl(), downLoadUrl))
+            {
+                downLoadJob.setDownLoadState(DownLoadState.loading);
+                downLoadJob.setFileCurrentSize(current);
+                downLoadJob.setFileSize(count);
+                downLoadJob.setSpeed(speed);
+            }
+        }
+    }
+
+    private DownLoadJob createDownLoadJob(String downLoadUrl, String downLoadName, String downLoadIcon)
+    {
+        DownLoadJob downLoadJob = new DownLoadJob(downLoadUrl, CommonUtils.getDownLoadDefaultPath(downLoadUrl));
+        downLoadJob.setFileName(downLoadName);
+        downLoadJob.setFileIconUrl(downLoadIcon);
+        return downLoadJob;
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            if ((System.currentTimeMillis() - exitTime) > 2000) {
+    public boolean onKeyDown(int keyCode, KeyEvent event)
+    {
+        if (keyCode == KeyEvent.KEYCODE_BACK)
+        {
+            if ((System.currentTimeMillis() - exitTime) > 2000)
+            {
                 Toast.makeText(this, "再按一次退出程序", Toast.LENGTH_SHORT).show();
                 exitTime = System.currentTimeMillis();
-            } else {
-                QYApplication.getInstacne().exitApp(this);
+            }
+            else
+            {
+                QYApplication.getInstance().exitApp(this);
             }
             return true;
         }
         return super.onKeyDown(keyCode, event);
     }
 
+    @Override
+    public void onStopClick(DownLoadJob downLoadJob)
+    {
+        onClick(downLoadJob);
+    }
 }

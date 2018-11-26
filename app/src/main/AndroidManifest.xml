@@ -2,9 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.qingyun.download.template">
 
-    <uses-permission android:name="android.permission.INTERNET" />
-    <permission android:name="com.qingyun.permission.downLoad" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -19,43 +17,13 @@
         <activity
             android:name=".application.DownLoadFileActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
-            android:screenOrientation="portrait"
-            android:theme="@android:style/Theme.Light">
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <service
-            android:name="com.qingyun.download.DownLoadService"
-            android:permission="com.qingyun.permission.downLoad"
-            android:process=":downLoadService">
-            <intent-filter>
-                <action android:name="com.qingyun.download.stop" />
-                <action android:name="com.qingyun.download.start" />
-                <action android:name="com.qingyun.download.stop.all" />
-            </intent-filter>
-        </service>
-
-        <receiver
-            android:name="com.qingyun.download.DownloadBroadcastReceiver"
-            android:permission="com.qingyun.permission.downLoad">
-            <intent-filter>
-                <action android:name="com.qingyun.download.action.start" />
-                <action android:name="com.qingyun.download.action.stop" />
-                <action android:name="com.qingyun.download.action.error" />
-                <action android:name="com.qingyun.download.action.scuess" />
-                <action android:name="com.qingyun.download.action.loading" />
-            </intent-filter>
-        </receiver>
-
-        <receiver android:name="com.qingyun.download.broadcast.NetChangeBroadCastReceiver">
-            <intent-filter>
-                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
-            </intent-filter>
-        </receiver>
 
         <provider
             android:name="android.support.v4.content.FileProvider"

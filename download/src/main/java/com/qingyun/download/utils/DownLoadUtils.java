@@ -8,28 +8,38 @@ import java.io.File;
  * 版本：v1.0
  * 描述：
  */
-public class DownLoadUtils {
+public class DownLoadUtils
+{
     /**
      * 文件大小转化为相应的B/MB/G单位
      *
      * @param fileSize
      * @return
      */
-    public static String convertStorage(long fileSize) {
+    public static String convertStorage(long fileSize)
+    {
         // TODO Auto-generated method stub
         long kb = 1024;
         long mb = kb * 1024;
         long gb = mb * 1024;
-        if (fileSize >= gb) {
+        if (fileSize >= gb)
+        {
             return String.format("%.1f GB", (float) fileSize / gb);
-        } else if (fileSize >= mb) {
+        }
+        else if (fileSize >= mb)
+        {
             float f = (float) fileSize / mb;
             return String.format(f > 100 ? "%.0f MB" : "%.1f MB", f);
-        } else if (fileSize >= kb) {
+        }
+        else if (fileSize >= kb)
+        {
             float f = (float) fileSize / kb;
             return String.format(f > 100 ? "%.0f KB" : "%.1f KB", f);
-        } else
+        }
+        else
+        {
             return String.format("%d B", fileSize);
+        }
     }
 
     /**
@@ -38,10 +48,13 @@ public class DownLoadUtils {
      * @param filePath
      * @return
      */
-    public static String getFileSuffix(String filePath) {
+    public static String getFileSuffix(String filePath)
+    {
         int dotPosition = filePath.lastIndexOf('.');
         if (dotPosition == -1)
+        {
             return "*/*";
+        }
         String ext = filePath.substring(dotPosition + 1, filePath.length())
                 .toLowerCase();
         return ext;
@@ -53,9 +66,11 @@ public class DownLoadUtils {
      * @param url
      * @return
      */
-    public static String getUrlContrainFileName(String url) {
+    public static String getUrlContrainFileName(String url)
+    {
         // TODO Auto-generated method stub
-        if (url == null || url.equals("") || !url.contains("/")) {
+        if (url == null || url.equals("") || !url.contains("/"))
+        {
             return "";
         }
         int separatorPosition = url.lastIndexOf("/");
@@ -70,44 +85,58 @@ public class DownLoadUtils {
      * @param filePath
      * @return
      */
-    public static boolean isFileExist(String filePath) {
+    public static boolean isFileExist(String filePath)
+    {
         // TODO Auto-generated method stub
         File file = new File(filePath);
-        if (file.exists()) {
+        if (file.exists())
+        {
             return true;
         }
         return false;
     }
 
-    public static void deleteDir(File file) {
-        if (file.exists()) {
-            if (file.isFile()) {
+    public static void deleteDir(File file)
+    {
+        if (file.exists())
+        {
+            if (file.isFile())
+            {
                 file.delete();
-            } else if (file.isDirectory()) {
+            }
+            else if (file.isDirectory())
+            {
                 File[] files = file.listFiles();
-                for (int i = 0; i < files.length; i++) {
+                for (int i = 0; i < files.length; i++)
+                {
                     deleteDir(files[i]);
                 }
                 file.delete();
             }
-        } else {
+        }
+        else
+        {
             System.out.println("所删除的文件不存在");
         }
     }
 
-    public static void deleteFile(String filePath) {
+    public static void deleteFile(String filePath)
+    {
         // TODO Auto-generated method stub
         File file = new File(filePath);
-        if (file.exists()) {
+        if (file.exists())
+        {
             file.delete();
         }
     }
 
-    public static String getFileMediaType(String fileUrl) {
+    public static String getFileMediaType(String fileUrl)
+    {
         String fileSuffix = getFileSuffix(fileUrl);
         fileSuffix = fileSuffix.toLowerCase();
         String fileMediaType;
-        switch (fileSuffix) {
+        switch (fileSuffix)
+        {
             case "png":
             case "jpg":
             case "jpeg":

@@ -14,9 +14,11 @@ public class DownLoadState {
     /** 正在下载中... */
     public static final int loading = 2;
     /** 下载完成... */
-    public static final int scuess = 3;
+    public static final int success = 3;
     /** 下载失败... */
     public static final int error = 4;
     /** 停止下载...*/
     public static final int stop = 5;
+    /** 下载完成...*/
+    public static final int finish = 6;
 }

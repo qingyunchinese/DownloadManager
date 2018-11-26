@@ -4,7 +4,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.telephony.TelephonyManager;
 
-import com.qingyun.download.DownLoadRunnable;
+import com.qingyun.download.DownLoadRealRunnable;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -24,7 +24,7 @@ public class QYExecutor extends ThreadPoolExecutor {
 
     QYExecutor(int maxNumThreads, ThreadFactory threadFactory) {
         super(maxNumThreads, maxNumThreads, 0, TimeUnit.MILLISECONDS,
-                new PriorityBlockingQueue<>(), threadFactory);
+                new PriorityBlockingQueue<Runnable>(),threadFactory);
     }
 
     public void adjustThreadCount(NetworkInfo info) {
@@ -72,16 +72,16 @@ public class QYExecutor extends ThreadPoolExecutor {
 
     @Override
     public Future<?> submit(Runnable task) {
-        AndroidFutureTask futureTask = new AndroidFutureTask((DownLoadRunnable) task);
+        AndroidFutureTask futureTask = new AndroidFutureTask((DownLoadRealRunnable) task);
         execute(futureTask);
         return futureTask;
     }
 
-    private static final class AndroidFutureTask extends FutureTask<DownLoadRunnable>
+    private static final class AndroidFutureTask extends FutureTask<DownLoadRealRunnable>
             implements Comparable<AndroidFutureTask> {
-        private final DownLoadRunnable hunter;
+        private final DownLoadRealRunnable hunter;
 
-        public AndroidFutureTask(DownLoadRunnable hunter) {
+        public AndroidFutureTask(DownLoadRealRunnable hunter) {
             super(hunter, null);
             this.hunter = hunter;
         }

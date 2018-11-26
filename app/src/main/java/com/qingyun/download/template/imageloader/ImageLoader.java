@@ -9,7 +9,7 @@ import android.widget.ImageView;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.qingyun.download.template.application.ImageGlide;
 import com.qingyun.download.template.R;
-import com.qingyun.download.utils.LogUtils;
+import com.qingyun.download.utils.LogUtil;
 
 import jp.wasabeef.glide.transformations.RoundedCornersTransformation;
 import jp.wasabeef.glide.transformations.RoundedCornersTransformation.CornerType;
@@ -110,7 +110,7 @@ public final class ImageLoader
             imageView.setImageResource(defaultResource);
             return;
         }
-        LogUtils.v("UrlDrawable", "setUrlDrawable:" + url);
+        LogUtil.v("UrlDrawable", "setUrlDrawable:" + url);
         String loadUrl = convertImageUrl(url);
         if (mImageLoadType == ImageNormalType)
         {

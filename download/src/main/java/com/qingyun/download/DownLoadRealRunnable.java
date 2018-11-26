@@ -2,10 +2,11 @@ package com.qingyun.download;
 
 import android.text.TextUtils;
 
+import com.qingyun.download.dao.DownLoadJob;
 import com.qingyun.download.multithread.MultiThreadCore;
 import com.qingyun.download.multithread.ThreadPriority;
 import com.qingyun.download.utils.DownLoadUtils;
-import com.qingyun.download.utils.LogUtils;
+import com.qingyun.download.utils.LogUtil;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -31,15 +32,16 @@ import okio.Okio;
  * 版本：v1.0
  * 描述：
  */
-public class DownLoadRunnable implements Runnable {
-    private final static String TAG = DownLoadRunnable.class.getSimpleName();
+public class DownLoadRealRunnable implements Runnable
+{
+    private final static String TAG = DownLoadRealRunnable.class.getSimpleName();
     public ThreadPriority priority;
     public int autoNumber;
     private final int BUFFER_SIZE = 1024*200;
     /**
      * 文件下载Url
      */
-    private String downLoadUrl = "";
+    private String downLoadUrl;
     /**
      * 文件下载成功后文件
      */
@@ -96,13 +98,13 @@ public class DownLoadRunnable implements Runnable {
      */
     private boolean cancelled;
 
-    public DownLoadRunnable(OkHttpClient okHttpClient, DownLoadRequest downLoadRequest) {
+    public DownLoadRealRunnable(OkHttpClient okHttpClient, DownLoadRequest downLoadRequest) {
         this.client = okHttpClient;
         this.downLoadRequest = downLoadRequest;
-        DownLoadRequestDao downLoadRequestDao = downLoadRequest.getDownLoadRequestDao();
-        downLoadUrl = downLoadRequestDao.getDownLoadUrl();
-        file = new File(downLoadRequestDao.getCacheFilePath());
-        tempFile = new File(downLoadRequestDao.getTempFilePath());
+        DownLoadJob downLoadJob = downLoadRequest.getDownLoadJob();
+        downLoadUrl = downLoadJob.getDownLoadUrl();
+        file = new File(downLoadJob.getCacheFilePath());
+        tempFile = new File(downLoadJob.getTempFilePath());
         baseDirFile = file.getParentFile();
         init();
     }
@@ -122,6 +124,7 @@ public class DownLoadRunnable implements Runnable {
         boolean needDownLoadThread = true;
         try {
             sendStartMessage(downLoadUrl);
+            file.delete();
             if (file.exists()) {
                 needDownLoadThread = false;
                 downloadSize = totalSize;
@@ -135,9 +138,9 @@ public class DownLoadRunnable implements Runnable {
                 }
                 Request.Builder builder = new Request.Builder().url(downLoadUrl);
                 builder.addHeader("Content-Type", DownLoadUtils.getFileMediaType(downLoadUrl));
-                String userAgent=downLoadRequest.getDownLoadRequestDao().getUserAgent();
+                String userAgent=downLoadRequest.getDownLoadJob().getUserAgent();
                 if(!TextUtils.isEmpty(userAgent)){
-                    builder.addHeader("user-agent",downLoadRequest.getDownLoadRequestDao().getUserAgent());
+                    builder.addHeader("user-agent",downLoadRequest.getDownLoadJob().getUserAgent());
                 }
                 builder.addHeader("RANGE",
                         "bytes=" + previousFileSize + "-");
@@ -281,43 +284,69 @@ public class DownLoadRunnable implements Runnable {
     }
 
     public void sendStartMessage(final String downLoadUrl) {
-        MultiThreadCore.getInstance().getExecutorSupplier().forMainThreadTasks().execute(() -> {
-            if (downLoadRequest != null) {
-                downLoadRequest.onDownLoadStart(downLoadUrl, file.getAbsolutePath());
+        MultiThreadCore.getInstance().getExecutorSupplier().forMainThreadTasks().execute(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                if (downLoadRequest != null) {
+                    downLoadRequest.onDownLoadStart(downLoadUrl, file.getAbsolutePath());
+                }
             }
         });
     }
 
     protected void sendStopMessage(final String downLoadUrl) {
-        MultiThreadCore.getInstance().getExecutorSupplier().forMainThreadTasks().execute(() -> {
-            if (downLoadRequest != null) {
-                downLoadRequest.onDownLoadStop(downLoadUrl, file.getAbsolutePath());
+        MultiThreadCore.getInstance().getExecutorSupplier().forMainThreadTasks().execute(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                if (downLoadRequest != null) {
+                    downLoadRequest.onDownLoadStop(downLoadUrl, file.getAbsolutePath());
+                }
             }
         });
     }
 
 
     protected void sendSuccessMessage(final String downLoadUrl) {
-        MultiThreadCore.getInstance().getExecutorSupplier().forMainThreadTasks().execute(() -> {
-            if (downLoadRequest != null) {
-                downLoadRequest.onDownLoadSuccess(downLoadUrl, file.getAbsolutePath());
+        MultiThreadCore.getInstance().getExecutorSupplier().forMainThreadTasks().execute(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                if (downLoadRequest != null) {
+                    downLoadRequest.onDownLoadSuccess(downLoadUrl, file.getAbsolutePath());
+                }
             }
         });
     }
 
     protected void sendFailureMessage(final String downLoadUrl, final String erorMessage) {
-        MultiThreadCore.getInstance().getExecutorSupplier().forMainThreadTasks().execute(() -> {
-            if (downLoadRequest != null) {
-                downLoadRequest.onDownLoadFailure(downLoadUrl, file.getAbsolutePath(), erorMessage);
+        MultiThreadCore.getInstance().getExecutorSupplier().forMainThreadTasks().execute(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                if (downLoadRequest != null) {
+                    downLoadRequest.onDownLoadFailure(downLoadUrl, file.getAbsolutePath(), erorMessage);
+                }
             }
         });
     }
 
     protected void sendProgressMessage(final String downLoadUrl, final long totalSize, final long currentSize,
                                        final long speed) {
-        MultiThreadCore.getInstance().getExecutorSupplier().forMainThreadTasks().execute(() -> {
-            if (downLoadRequest != null) {
-                downLoadRequest.onDownLoadLoading(downLoadUrl, file.getAbsolutePath(), totalSize, currentSize, speed);
+        MultiThreadCore.getInstance().getExecutorSupplier().forMainThreadTasks().execute(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                if (downLoadRequest != null)
+                {
+                    downLoadRequest.onDownLoadLoading(downLoadUrl, file.getAbsolutePath(), totalSize, currentSize, speed);
+                }
             }
         });
     }
@@ -344,7 +373,7 @@ public class DownLoadRunnable implements Runnable {
                     }
                 }
             }
-        }, 0, 500);
+        }, 0, 300);
     }
 
     private void stopTimer() {
@@ -355,7 +384,7 @@ public class DownLoadRunnable implements Runnable {
     }
 
     public void cancelThread() {
-        LogUtils.v(TAG, "cancel");
+        LogUtil.v(TAG, "cancel");
         cancelled = false;
         if (call != null && call.isExecuted()) {
             call.cancel();

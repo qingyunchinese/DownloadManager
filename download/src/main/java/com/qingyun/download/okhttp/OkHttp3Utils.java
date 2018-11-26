@@ -18,11 +18,9 @@ public class OkHttp3Utils {
                 if (client == null) {
                     client = new OkHttpClient.Builder()
                             .retryOnConnectionFailure(true)
-                            .cache(OkHttp3Config.getDefaultCache())
                             .connectTimeout(OkHttp3Config.TIMEOUT, TimeUnit.SECONDS)
                             .readTimeout(OkHttp3Config.READ_TIMEOUT, TimeUnit.SECONDS)
                             .writeTimeout(OkHttp3Config.WRITE_TIMEOUT, TimeUnit.SECONDS)
-                            .addNetworkInterceptor(OkHttp3Config.CACHE_CONTROL_INTERCEPTOR)
                             .addInterceptor(OkHttp3Config.LOGGING_INTERCEPTOR)
                             .addInterceptor(OkHttp3Config.ADD_HEAD_PARAMETER_INTERCEPTOR)
                     .build();

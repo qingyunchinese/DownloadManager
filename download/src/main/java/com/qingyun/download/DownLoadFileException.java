@@ -6,7 +6,8 @@ package com.qingyun.download;
  * 版本：v1.0
  * 描述：
  */
-public class DownLoadFileException extends Exception {
+public class DownLoadFileException extends Exception
+{
     private String errorBody = "";
     private String errorCode = "";
 
